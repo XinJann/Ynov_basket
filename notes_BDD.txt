@@ -1,0 +1,37 @@
+Table Players :
+    - player_id INT NOT NULL
+    - first_name CHAR NOT NULL
+    - height_feet INT
+    - height_inches INT
+    - last_name CHAR NOT NULL
+    - position CHAR
+    - team_id
+    - weight_pounds INT
+
+Table Teams:
+    - team_id INT NOT NULL
+    - abbreviation CHAR NOT NULL
+    - city CHAR NOT NULL
+    - conference CHAR NOT NULL
+    - division CHAR NOT NULL
+    - full_name CHAR NOT NULL
+    - name CHAR NOT NULL
+
+Table Games :
+    - game_id INT NOT NULL
+    - date CHAR NOT NULL
+    - home_team_id INT NOT NULL
+    - home_team_score
+    - period INT (0,1,2,3,4)
+    - postseason BOOLEAN NOT NULL
+    - season INT NOT NULL
+    - status CHAR NOT NULL
+    - time CHAR NOT NULL
+    - visitor_team_id INT NOT NULL
+    - visitor_team_score INT NOT NULL
+
+
+Users :
+    - user_id INT AUTO_INCREMENT NOT NULL
+    - password CHAR NOT NULL
+    - username CHAR NOT NULL

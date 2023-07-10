@@ -1,0 +1,79 @@
+doc : 
+https://www.balldontlie.io/home.html#getting-started
+- players 
+- Teams
+- Games
+(- Stats)
+(- Season_averages)
+
+
+##### Players
+Récupération des joueurs : 
+GET https://www.balldontlie.io/api/v1/players?page=0&per_page=100
+(il existe aussi un paramètre "search" qui permet d'affiner les retour en fonction d'une chaine de caractère)
+
+Donne 2 éléments "data" et "meta"
+"data" => données sur 100 joueurs (100 = "per_page", 100 est le max)
+    les données de chaque joueur sont de la forme 
+    - id NOT NULL
+    - first_name NOT NULL
+    - height_feet NULL = null
+    - height_inches NULL = null
+    - last_name NOT NULL
+    - position NULL = ""
+    - team NOT NULL
+        - id NOT NULL
+        - abbreviation NOT NULL
+        - city NOT NULL
+        - conference NOT NULL
+        - division NOT NULL
+        - full_name NOT NULL
+        - name NOT NULL
+    - weight_pounds NULL = null
+
+"meta" => données sur notre avancement dans les données avec des valeurs tel que "total_pages" , "current_page", "next_page" ... (se servir de ça pour boucler sur les données)
+    - total_pages
+    - current_page
+    - next_page
+    - per_page
+    - total_count
+
+##### Teams
+
+GET https://www.balldontlie.io/api/v1/teams?page=0&per_page=100
+
+Donne "data" et "meta"
+"data =>
+    - id
+    - abbreviation
+    - city
+    - conference
+    - division
+    - full_name
+    - name
+
+"meta" =>
+    - total_pages
+    - current_page
+    - next_page
+    - per_page
+    - total_count
+
+
+
+###### Games
+
+GET https://www.balldontlie.io/api/v1/games?page=0&per_page=100
+
+Nouveaux paramètres possible :
+    - dates : tableaux de dates format "YYYY-MM-DD"
+    - seasons : tableaux de saisons
+    - team_ids : tableaux de team_ids
+    - postseason : boolean
+    - start_date : date de début (inclusif), format "YYYY-MM-DD"
+    - end_date : date de fin (inclusif), format "YYYY-MM-DD"
+
+Choses à savoir : 
+    - period : INT {0,1,2,3,4} , 0 => games not started, 4 => Final (match finis) ou 4ème quarter
+    - status : string, donne le status de la game (1er quarter, 2ème quarter, Halft time etc etc)
+    - time : string , temps en jeux (format "3;44"), si la partie n'est pas en cours alors time = " "
