@@ -1,0 +1,62 @@
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination a {
+    color: #007BFF; /* Couleur du lien */
+    text-decoration: none;
+    margin: 0 5px; /* Espacement horizontal entre les liens */
+    padding: 5px 10px; /* Espacement interne du lien */
+    border: 1px solid #007BFF; /* Bordure du lien */
+    border-radius: 5px; /* Coins arrondis du lien */
+    transition: background-color 0.3s ease-in-out; /* Transition de couleur en cas de survol */
+}
+
+.pagination a:hover {
+    background-color: #007BFF; /* Couleur de fond en cas de survol */
+    color: #fff; /* Couleur du texte en cas de survol */
+}
+
+.pagination .active {
+    background-color: #007BFF; /* Couleur de fond du lien actif */
+    color: #fff; /* Couleur du texte du lien actif */
+    pointer-events: none; /* Désactiver les interactions pour le lien actif */
+}
+
+.page-input {
+    display: flex;
+    align-items: center;
+    margin: 0 10px; }
+
+.page-input form {
+    display: flex;
+    align-items: center;
+}
+
+.page-input label {
+    margin-right: 5px;
+}
+
+.page-input input[type="number"] {
+    width: 50px; 
+}
+
+.page-input input[type="submit"] {
+    padding: 5px 10px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.page-input input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.page-input p {
+    margin-left: 5px;
+}

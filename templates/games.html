@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ma page avec barre de navigation</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pagination.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="card-container" id="cardContainer">
+        {% for game in games %}
+        <a href="/game?game_id={{ game[0] }}" class="card-link">
+            <div class="card">
+                <h3>{{ game[1] }} VS {{ game[2] }}</h3>
+                <p>{{ game[3][:10] }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if current_page > 1 %}
+        <a href="/games?page={{ current_page - 1 }}">Précédent</a>
+        {% endif %}
+
+        <div class="page-input">
+            <form action="{{ url_for('games') }}" method="GET">
+                <label for="pageInput">Page:</label>
+                <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
+                <input type="submit" value="Go">
+            </form>
+            <p>sur {{ total_pages }}</p>
+        </div>
+
+        {% if games|length == 100 %}
+        <a href="/games?page={{ current_page + 1 }}">Suivant</a>
+        {% endif %}
+    </div>
+
+</body>
+</html>

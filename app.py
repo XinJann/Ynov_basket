@@ -1,41 +1,32 @@
-from flask import Flask, make_response, render_template, redirect
+from flask import Flask, make_response, render_template, redirect, request
 import flask
 import uuid
 import bcrypt
 import mysql.connector
 from flask_bcrypt import generate_password_hash, check_password_hash
-
-# add theses parameters in curl command to return the response time
-# -w %{time_total} -o /dev/null
-
-# Payload qui bypass le test
-# curl --cookie "session_id=57177389-7cb7-4c37-a8dd-e2913639b07e' OR 1=1 Limit 1#" localhost:5000/admin
-
+from math import ceil
 
 app = Flask(__name__)
 
+database =""
+user=""
+password=""
+
+with open('credentials.txt','r') as f:
+    lines = f.readlines()
+    database = lines[0].replace('\n','')
+    user = lines[1].replace('\n','')
+    password = lines[2].replace('\n','')
+
 connection = mysql.connector.connect(host='localhost',
-                                         database='',
-                                         user='',
-                                         password='')
+                                         database=database,
+                                         user=user,
+                                         password=password)
 cursor = connection.cursor()
 
 salt=bcrypt.gensalt()
-# Create users table if it doesn't exist
 
-#with open('script.sql', 'r') as sql_file:
-    #connection.executescript(sql_file.read())
-
-def executeScriptsFromFile(filename):
-    fd = open(filename, 'r')
-    sqlFile = fd.read()
-    fd.close()
-    sqlCommands = sqlFile.split(';')
-    for command in sqlCommands:
-        if command.strip() != '':
-            cursor.execute(command)
-
-# executeScriptsFromFile('script.sql')
+cards_per_page = 100
 
 def get_cookie_from_user(user_id):
     cursor.execute('SELECT cookie FROM users WHERE id=%s', (user_id,))
@@ -59,13 +50,82 @@ def set_cookie(cookie):
     response.set_cookie('session_id', cookie)
     return response
 
+def get_team_data_from_id(team_id):
+    cursor.execute('SELECT * FROM teams WHERE team_id=%s', (team_id,))
 
-# Index page
+def get_players_from_page(page_number,cards_per_page):
+    cursor.execute('SELECT player_id,first_name, last_name FROM players LIMIT %s OFFSET %s', (cards_per_page,page_number*cards_per_page))
+    return cursor.fetchall()
+
+def get_teams_from_page(page_number,cards_per_page):
+    cursor.execute('SELECT team_id,team_name FROM teams LIMIT %s OFFSET %s', (cards_per_page,page_number*cards_per_page))
+    return cursor.fetchall()
+
+def get_games_from_page(page_number,cards_per_page):
+    cursor.execute("""
+SELECT game_id,attack.abbreviation,defense.abbreviation,game_date FROM games 
+JOIN teams as attack ON home_team_id = attack.team_id
+JOIN teams as defense ON visitor_team_id = defense.team_id
+LIMIT %s OFFSET %s;
+""", (cards_per_page,page_number*cards_per_page))
+    return cursor.fetchall()
+
+def sanitize_current_page(page):
+    if page:
+        current_page = int(page)
+        if current_page <= 0:
+            current_page = 1
+    else:
+        current_page = 1
+    return current_page
+
+def get_total_pages(table):
+    if table == "games":
+        cursor.execute('SELECT COUNT(*) FROM games')
+        return cursor.fetchone()[0]
+    elif table == "players":
+        cursor.execute('SELECT COUNT(*) FROM players')
+        return cursor.fetchone()[0]
+    elif table == "teams":
+        cursor.execute('SELECT COUNT(*) FROM teams')
+        return cursor.fetchone()[0]
+
+    
 @app.route('/', methods=['GET'])
-def index():
+def players():
     session_id = flask.request.cookies.get('session_id')
-    print(session_id)
-    # return render_template('index.html', result = admin_check(session_id), logged = session_id)
+    
+    current_page = sanitize_current_page(request.args.get("page"))
+    total_pages = ceil(get_total_pages("players")/cards_per_page)
+    if current_page > total_pages:
+        current_page = total_pages
+    
+    datas = get_players_from_page(current_page-1,cards_per_page)
+    return render_template('players.html', players = datas, current_page = current_page, total_pages = total_pages)
+
+@app.route('/teams', methods=['GET'])
+def teams():
+    session_id = flask.request.cookies.get('session_id')
+    
+    current_page = sanitize_current_page(request.args.get("page"))
+    total_pages = ceil(get_total_pages("teams")/cards_per_page)
+    if current_page > total_pages:
+        current_page = total_pages
+    
+    datas = get_teams_from_page(current_page-1,cards_per_page)
+    return render_template('teams.html', teams = datas, current_page = current_page, total_pages = total_pages)
+
+@app.route('/games', methods=['GET'])
+def games():
+    session_id = flask.request.cookies.get('session_id')
+
+    current_page = sanitize_current_page(request.args.get("page"))
+    total_pages = ceil(get_total_pages("games")/cards_per_page)
+    if current_page > total_pages:
+        current_page = total_pages
+    
+    datas = get_games_from_page(current_page-1,cards_per_page)
+    return render_template('games.html', games = datas,current_page = current_page, total_pages = total_pages)
 
 # Login page
 @app.route('/login', methods=['GET', 'POST'])

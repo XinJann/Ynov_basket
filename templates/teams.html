@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ma page avec barre de navigation</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pagination.css') }}">
+</head>
+<body>
+
+    {% include 'navbar.html' %}
+
+    <div class="card-container" id="cardContainer">
+        {% for team in teams %}
+        <a href="/team?team_id={{ team[0] }}" class="card-link">
+            <div class="card">
+                <h3>{{ team[1] }}</h3>
+            </div>
+        </a>
+        {% endfor %}
+        
+    </div>
+
+    <div class="pagination">
+        {% if current_page > 1 %}
+        <a href="/teams?page={{ current_page - 1 }}">Précédent</a>
+        {% endif %}
+
+        <div class="page-input">
+            <form action="{{ url_for('teams') }}" method="GET">
+                <label for="pageInput">Page:</label>
+                <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
+                <input type="submit" value="Go">
+            </form>
+            <p>sur {{ total_pages }}</p>
+        </div>
+
+        {% if teams|length == 100 %}
+        <a href="/teams?page={{ current_page + 1 }}">Suivant</a>
+        {% endif %}
+    </div>
+    <!-- Le reste du contenu de votre page vient ici -->
+
+</body>
+</html>
