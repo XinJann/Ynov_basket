@@ -1,0 +1,53 @@
+.filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px; /* Augmenter l'espacement par rapport au contenu au-dessus */
+}
+
+.filter-bar form {
+    display: flex;
+    align-items: center;
+}
+
+.filter-bar label {
+    margin-right: 15px; /* Augmenter l'espacement entre les étiquettes et les champs d'entrée */
+    font-weight: bold;
+}
+  
+.filter-bar input[type="text"],
+.filter-bar input[type="number"] {
+    padding: 8px; /* Augmenter la taille du padding pour plus d'espace interne */
+    margin-right: 15px; /* Augmenter l'espacement horizontal entre les champs d'entrée */
+    border: 1px solid #ccc;
+    border-radius: 8px; /* Augmenter le rayon des coins pour une apparence plus arrondie */
+    font-size: 14px; /* Augmenter la taille de la police pour une meilleure lisibilité */
+}
+
+.filter-bar input[type="submit"] {
+    padding: 8px 15px; /* Augmenter la taille du padding pour plus d'espace interne */
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 8px; /* Augmenter le rayon des coins pour une apparence plus arrondie */
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.filter-bar input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.sorting-options {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.sorting-options label {
+  margin-right: 15px;
+}
+
+.sorting-options input[type="radio"] {
+  margin-right: 5px;
+}
