@@ -5,11 +5,69 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pagination.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/filter_bar.css') }}">
 </head>
 <body>
 
     {% include 'navbar.html' %}
+    <div class="filter-bar">
+        <form action="/teams" method="POST">
+            <input type="hidden" name="page" value="1">
+            <div class="filter-item">
+                <label for="playerHeightSign">Taille moyenne </label>
+                <select id="playerHeightSign" name="height_sign">
+                    <option value="gt" {% if post %} {% if parameters[1] == "gt" %} selected {% endif %}{% endif %}>></option>
+                    <option value="gte" {% if post %} {% if parameters[1] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                    <option value="eq" {% if post %} {% if parameters[1] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                    <option value="lte" {% if post %} {% if parameters[1] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                    <option value="lt" {% if post %} {% if parameters[1] == "lt" %} selected {% endif %}{% endif %}><</option>
+                </select>
 
+                
+                <input type="number" id="playerHeight" name="playerHeight" step= "0.01" placeholder="en mètre" {% if post %}value="{{ parameters[0] }}"{% endif %}>
+            </div>
+
+            <div class="filter-item">
+                <label for="playerWeightSign"> Poids moyen </label>
+                <select id="playerWeightSign" name="weight_sign">
+                    <option value="gt" {% if post %} {% if parameters[3] == "gt" %} selected {% endif %}{% endif %}>></option>
+                    <option value="gte" {% if post %} {% if parameters[3] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                    <option value="eq" {% if post %} {% if parameters[3] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                    <option value="lte" {% if post %} {% if parameters[3] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                    <option value="lt" {% if post %} {% if parameters[3] == "lt" %} selected {% endif %}{% endif %}><</option>
+                </select>
+
+                <input type="number" id="playerWeight" name="playerWeight" placeholder="en kg" {% if post %}value="{{ parameters[2] }}"{% endif %}>
+            </div>
+            <div class="sorting-options">
+                <label>
+                    <input type="radio" name="sortingOption" value="alphabetical" {% if post %} {% if parameters[4] == "alphabetical" %} checked {% endif %}{% else %} checked {% endif %}>
+                    Tri alphabétique
+                </label>
+                <label>
+                    <input type="radio" name="sortingOption" value="height" {% if post %} {% if parameters[4] == "height" %} checked {% endif %}{% endif %}>
+                    Tri par la taille moyenne
+                </label>
+                <label>
+                    <input type="radio" name="sortingOption" value="weight" {% if post %} {% if parameters[4] == "weight" %} checked {% endif %}{% endif %}>
+                    Tri par le poids moyen
+                </label>
+            </div>
+
+            <div class="sorting-options">
+                <label>
+                    <input type="radio" name="sortingOrder" value="ASC" {% if post %} {% if parameters[5] == "ASC" %} checked {% endif %} {% else %} checked {% endif %}>
+                    Croissant
+                </label>
+                <label>
+                    <input type="radio" name="sortingOrder" value="DESC" {% if post %} {% if parameters[5] == "DESC" %} checked {% endif %}{% endif %}>
+                    Decroissant
+                </label>
+            </div>
+
+            <input type="submit" value="Filtrer">
+        </form>
+    </div>
     <div class="card-container" id="cardContainer">
         {% for team in teams %}
         <a href="/team?team_id={{ team[0] }}" class="card-link">
@@ -20,26 +78,71 @@
         {% endfor %}
         
     </div>
+    {% if post %}
+        <div class="pagination">
+            {% if current_page > 1 %}
+                <form action="{{ url_for('teams') }}" method="POST" class="pagination-form">
+                    <input type="hidden" name="page" value="{{ current_page - 1 }}">
+                    <input type="hidden" name="height_sign" value="{{ parameters[1] }}">
+                    <input type="hidden" name="playerHeight" value="{{ parameters[0] }}">
+                    <input type="hidden" name="weight_sign" value="{{ parameters[3] }}">
+                    <input type="hidden" name="playerWeight" value="{{ parameters[2] }}">
+                    <input type="hidden" name="sortingOption" value="{{ parameters[4] }}">
+                    <input type="hidden" name="sortingOrder" value="{{ parameters[5] }}">
 
-    <div class="pagination">
-        {% if current_page > 1 %}
-        <a href="/teams?page={{ current_page - 1 }}">Précédent</a>
-        {% endif %}
+                    <input type="submit" value="Précédent">
+                </form>
+            {% endif %}
+            <div class="page-input">
+                <form action="{{ url_for('teams') }}" method="POST" class="pagination-form">
+                    <input type="hidden" name="height_sign" value="{{ parameters[1] }}">
+                    <input type="hidden" name="playerHeight" value="{{ parameters[0] }}">
+                    <input type="hidden" name="weight_sign" value="{{ parameters[3] }}">
+                    <input type="hidden" name="playerWeight" value="{{ parameters[2] }}">
+                    <input type="hidden" name="sortingOption" value="{{ parameters[4] }}">
+                    <input type="hidden" name="sortingOrder" value="{{ parameters[5] }}">
 
-        <div class="page-input">
-            <form action="{{ url_for('teams') }}" method="GET">
-                <label for="pageInput">Page:</label>
-                <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
-                <input type="submit" value="Go">
-            </form>
+                    <label for="pageInput">Page :</label>
+                    <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
+
+                    <input type="submit" value="Go">
+                </form>
+            </div>
             <p>sur {{ total_pages }}</p>
+            {% if players|length == 100 %}
+                <form action="{{ url_for('teams') }}" method="POST" class="pagination-form">
+                    <input type="hidden" name="page" value="{{ current_page + 1 }}">
+                    <input type="hidden" name="height_sign" value="{{ parameters[1] }}">
+                    <input type="hidden" name="playerHeight" value="{{ parameters[0] }}">
+                    <input type="hidden" name="weight_sign" value="{{ parameters[3] }}">
+                    <input type="hidden" name="playerWeight" value="{{ parameters[2] }}">
+                    <input type="hidden" name="sortingOption" value="{{ parameters[4] }}">
+                    <input type="hidden" name="sortingOrder" value="{{ parameters[5] }}">
+        
+                    <input type="submit" value="Suivant">
+                </form>
+            {% endif %}
         </div>
+    {% else %}
+        <div class="pagination">
+            {% if current_page > 1 %}
+            <a href="/teams?page={{ current_page - 1 }}">Précédent</a>
+            {% endif %}
 
-        {% if teams|length == 100 %}
-        <a href="/teams?page={{ current_page + 1 }}">Suivant</a>
-        {% endif %}
-    </div>
-    <!-- Le reste du contenu de votre page vient ici -->
+            <div class="page-input">
+                <form action="{{ url_for('teams') }}" method="GET">
+                    <label for="pageInput">Page:</label>
+                    <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
+                    <input type="submit" value="Go">
+                </form>
+                <p>sur {{ total_pages }}</p>
+            </div>
+
+            {% if teams|length == 100 %}
+            <a href="/teams?page={{ current_page + 1 }}">Suivant</a>
+            {% endif %}
+        </div>
+    {% endif %}
 
 </body>
 </html>

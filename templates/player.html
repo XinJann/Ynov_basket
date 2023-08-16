@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Détails du Joueur</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/player.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+  <h1>Détails du Joueur</h1>
+  
+  <div class="player-details">
+    <h2>{{ player[0]}} {{ player[1] }} </h2>
+    <p>Poste:{% if player[2] == '' %} aucun {% else %}{{ player[2 ]}} {% endif %} </p>
+    <p>Taille:{% if player[3] == None %} inconnue {% else %} {{ player[3] }}  pieds {{ player[4] }}  pouces ( {{ '{:.2f}'.format((player[3] * 0.3048) + (player[4] * 0.0254)) }} m){% endif %}</p>
+    <p>Poids: {% if player[5] == None %} inconnue {% else %} {{ player[5] }}  livres ( {{ '{:.2f}'.format(player[5]/2.20462) }} kg){% endif %}</p>
+  </div>
+  <h1> Equipe du joueur </h1>
+  <div class="card-container" id="cardContainer">
+    <a href="/team?team_id={{ player[6] }}" class="card-link">
+        <div class="card">
+            <h3>{{ team_name }}</h3>
+        </div>
+    </a>
+    
+</div>
+</body>
+</html>

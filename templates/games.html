@@ -5,9 +5,91 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pagination.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/filter_bar.css') }}">
 </head>
 <body>
     {% include 'navbar.html' %}
+    <div class="filter-bar">
+        <form action="/games" method="POST">
+            <label for="homeTeam">Team local (L):</label>
+            <input type="text" id="homeTeam" name="homeTeam" {% if post %}value="{{ parameters[0] }}"{% endif %}>
+
+            <label for="foreignTeam">Team Visiteur (V):</label>
+            <input type="text" id="foreignTeam" name="foreignTeam" {% if post %}value="{{ parameters[1] }}"{% endif %}>
+
+            <label for="winnerTeam">Team Winner:</label>
+            <input type="text" id="winnerTeam" name="winnerTeam" {% if post %}value="{{ parameters[11] }}"{% endif %}>
+
+            <input type="hidden" name="page" value="1">
+
+            <div class="filter-item">
+                <label for="homeScoreSign">Score L </label>
+                <select id="homeScoreSign" name="homeScoreSign">
+                    <option value="gt" {% if post %} {% if parameters[3] == "gt" %} selected {% endif %}{% endif %}>></option>
+                    <option value="gte" {% if post %} {% if parameters[3] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                    <option value="eq" {% if post %} {% if parameters[3] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                    <option value="lte" {% if post %} {% if parameters[3] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                    <option value="lt" {% if post %} {% if parameters[3] == "lt" %} selected {% endif %}{% endif %}><</option>
+                </select>
+
+                
+                <input type="number" id="homeScore" name="homeScore" step= "1" {% if post %}value="{{ parameters[2] }}"{% endif %}>
+            </div>
+
+            <div class="filter-item">
+                <label for="foreignScoreSign">Score V </label>
+                <select id="foreignScoreSign" name="foreignScoreSign">
+                    <option value="gt" {% if post %} {% if parameters[5] == "gt" %} selected {% endif %}{% endif %}>></option>
+                    <option value="gte" {% if post %} {% if parameters[5] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                    <option value="eq" {% if post %} {% if parameters[5] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                    <option value="lte" {% if post %} {% if parameters[5] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                    <option value="lt" {% if post %} {% if parameters[5] == "lt" %} selected {% endif %}{% endif %}><</option>
+                </select>
+
+                <input type="number" id="foreignScore" name="foreignScore" {% if post %}value="{{ parameters[4] }}"{% endif %}>
+            </div>
+
+            <div class="filter-item">
+                <label for="dateSign">Date </label>
+                <select id="dateSign" name="dateSign">
+                    <option value="gt" {% if post %} {% if parameters[7] == "gt" %} selected {% endif %}{% endif %}>></option>
+                    <option value="gte" {% if post %} {% if parameters[7] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                    <option value="eq" {% if post %} {% if parameters[7] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                    <option value="lte" {% if post %} {% if parameters[7] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                    <option value="lt" {% if post %} {% if parameters[7] == "lt" %} selected {% endif %}{% endif %}><</option>
+                </select>
+
+                <input type="date" id="date" name="date" {% if post %}value="{{ parameters[6] }}"{% endif %}>
+            </div>
+
+            <div class="filter-item">
+                <label for="ecartSign">Ecart </label>
+                <select id="ecartSign" name="ecartSign">
+                    <option value="gt" {% if post %} {% if parameters[9] == "gt" %} selected {% endif %}{% endif %}>></option>
+                    <option value="gte" {% if post %} {% if parameters[9] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                    <option value="eq" {% if post %} {% if parameters[9] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                    <option value="lte" {% if post %} {% if parameters[9] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                    <option value="lt" {% if post %} {% if parameters[9] == "lt" %} selected {% endif %}{% endif %}><</option>
+                </select>
+
+                <input type="number" id="ecartScore" name="ecartScore" {% if post %}value="{{ parameters[8] }}"{% endif %}>
+            </div>
+
+            <div class="sorting-options">
+                <label>
+                    <input type="radio" name="sortingOrder" value="ASC" {% if post %} {% if parameters[10] == "ASC" %} checked {% endif %} {% else %} checked {% endif %}>
+                    Croissant
+                </label>
+                <label>
+                    <input type="radio" name="sortingOrder" value="DESC" {% if post %} {% if parameters[10] == "DESC" %} checked {% endif %}{% endif %}>
+                    Decroissant
+                </label>
+            </div>
+
+            <input type="submit" value="Filtrer">
+        </form>
+    </div>
+
 
     <div class="card-container" id="cardContainer">
         {% for game in games %}
@@ -20,24 +102,90 @@
         {% endfor %}
     </div>
 
-    <div class="pagination">
-        {% if current_page > 1 %}
-        <a href="/games?page={{ current_page - 1 }}">Précédent</a>
-        {% endif %}
+    {% if post %}
+        <div class="pagination">
+            {% if current_page > 1 %}
+                <form action="{{ url_for('games') }}" method="POST" class="pagination-form">
+                    <input type="hidden" name="page" value="{{ current_page - 1 }}">
+                    <input type="hidden" name="homeTeam" value="{{ parameters[0] }}">
+                    <input type="hidden" name="foreignTeam" value="{{ parameters[1] }}">
+                    <input type="hidden" name="homeScore" value="{{ parameters[2] }}">
+                    <input type="hidden" name="homeScoreSign" value="{{ parameters[3] }}">
+                    <input type="hidden" name="foreignScore" value="{{ parameters[4] }}">
+                    <input type="hidden" name="foreignScoreSign" value="{{ parameters[5] }}">
+                    <input type="hidden" name="date" value="{{ parameters[6] }}">
+                    <input type="hidden" name="dateSign" value="{{ parameters[7] }}">
+                    <input type="hidden" name="ecartScore" value="{{ parameters[8] }}">
+                    <input type="hidden" name="ecartSign" value="{{ parameters[9] }}">
+                    <input type="hidden" name="sortingOrder" value="{{ parameters[10] }}">
+                    <input type="hidden" name="winnerTeam" value="{{ parameters[11] }}">
 
-        <div class="page-input">
-            <form action="{{ url_for('games') }}" method="GET">
-                <label for="pageInput">Page:</label>
-                <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
-                <input type="submit" value="Go">
-            </form>
+                    <input type="submit" value="Précédent">
+                </form>
+            {% endif %}
+            <div class="page-input">
+                <form action="{{ url_for('games') }}" method="POST" class="pagination-form">
+                    <input type="hidden" name="homeTeam" value="{{ parameters[0] }}">
+                    <input type="hidden" name="foreignTeam" value="{{ parameters[1] }}">
+                    <input type="hidden" name="homeScore" value="{{ parameters[2] }}">
+                    <input type="hidden" name="homeScoreSign" value="{{ parameters[3] }}">
+                    <input type="hidden" name="foreignScore" value="{{ parameters[4] }}">
+                    <input type="hidden" name="foreignScoreSign" value="{{ parameters[5] }}">
+                    <input type="hidden" name="date" value="{{ parameters[6] }}">
+                    <input type="hidden" name="dateSign" value="{{ parameters[7] }}">
+                    <input type="hidden" name="ecartScore" value="{{ parameters[8] }}">
+                    <input type="hidden" name="ecartSign" value="{{ parameters[9] }}">
+                    <input type="hidden" name="sortingOrder" value="{{ parameters[10] }}">
+                    <input type="hidden" name="winnerTeam" value="{{ parameters[11] }}">
+                    
+                    <label for="pageInput">Page :</label>
+                    <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
+
+                    <input type="submit" value="Go">
+                </form>
+            </div>
             <p>sur {{ total_pages }}</p>
+            {% if games|length == 100 %}
+                <form action="{{ url_for('games') }}" method="POST" class="pagination-form">
+                    <input type="hidden" name="page" value="{{ current_page + 1 }}">
+                    <input type="hidden" name="homeTeam" value="{{ parameters[0] }}">
+                    <input type="hidden" name="foreignTeam" value="{{ parameters[1] }}">
+                    <input type="hidden" name="homeScore" value="{{ parameters[2] }}">
+                    <input type="hidden" name="homeScoreSign" value="{{ parameters[3] }}">
+                    <input type="hidden" name="foreignScore" value="{{ parameters[4] }}">
+                    <input type="hidden" name="foreignScoreSign" value="{{ parameters[5] }}">
+                    <input type="hidden" name="date" value="{{ parameters[6] }}">
+                    <input type="hidden" name="dateSign" value="{{ parameters[7] }}">
+                    <input type="hidden" name="ecartScore" value="{{ parameters[8] }}">
+                    <input type="hidden" name="ecartSign" value="{{ parameters[9] }}">
+                    <input type="hidden" name="sortingOrder" value="{{ parameters[10] }}">
+                    <input type="hidden" name="winnerTeam" value="{{ parameters[11] }}">
+        
+                    <input type="submit" value="Suivant">
+                </form>
+            {% endif %}
         </div>
+    {% else %}
 
-        {% if games|length == 100 %}
-        <a href="/games?page={{ current_page + 1 }}">Suivant</a>
-        {% endif %}
-    </div>
+        <div class="pagination">
+            {% if current_page > 1 %}
+            <a href="/games?page={{ current_page - 1 }}">Précédent</a>
+            {% endif %}
+
+            <div class="page-input">
+                <form action="{{ url_for('games') }}" method="GET">
+                    <label for="pageInput">Page:</label>
+                    <input type="number" id="pageInput" name="page" value="{{ current_page }}" min="1" max="{{ total_pages }}">
+                    <input type="submit" value="Go">
+                </form>
+                <p>sur {{ total_pages }}</p>
+            </div>
+
+            {% if games|length == 100 %}
+            <a href="/games?page={{ current_page + 1 }}">Suivant</a>
+            {% endif %}
+        </div>
+    {% endif %}
 
 </body>
 </html>

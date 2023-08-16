@@ -2,51 +2,26 @@ from flask import Flask, make_response, render_template, redirect, request
 import flask
 import uuid
 import bcrypt
-import mysql.connector
 from flask_bcrypt import generate_password_hash, check_password_hash
 from math import ceil
+from database_connector import cursor,connection,database_execute_query
+
+from filter_querys.players import build_filter_query_for_players
+from filter_querys.teams import build_filter_query_for_teams
+from filter_querys.games import build_filter_query_for_games
+
+from utils.team_utils import get_teams_from_page,get_team_name_from_id,team_id_exist
+from utils.cookie_utils import get_cookie_from_user,get_user_from_cookie
+from utils.player_utils import get_players_from_page,player_id_exist,get_player_data_from_id
+from utils.game_utils import get_games_from_page
 
 app = Flask(__name__)
 
-database =""
-user=""
-password=""
 
-with open('credentials.txt','r') as f:
-    lines = f.readlines()
-    database = lines[0].replace('\n','')
-    user = lines[1].replace('\n','')
-    password = lines[2].replace('\n','')
-
-connection = mysql.connector.connect(host='localhost',
-                                         database=database,
-                                         user=user,
-                                         password=password)
-cursor = connection.cursor()
 
 salt=bcrypt.gensalt()
 
 cards_per_page = 100
-
-strings_to_sign = {"gt" : ">", "gte" : ">=", "eq" : "=", "lte" : "<=", "lt" : "<"}
-
-strings_to_sign = {"gt" : ">=", "gte" : ">=", "eq" : "=", "lte" : "<=", "lt" : "<"}
-
-def get_cookie_from_user(user_id):
-    cursor.execute('SELECT cookie FROM users WHERE id=%s', (user_id,))
-    result = cursor.fetchone()
-    if result:
-        return result[0]
-    else:
-        return None
-
-def get_user_from_cookie(cookie):
-    cursor.execute('SELECT username FROM users WHERE cookie=%s', (cookie,))
-    result = cursor.fetchone()
-    if result:
-        return result[0]
-    else:
-        return None
 
 # Function to set a cookie for a user
 def set_cookie(cookie):
@@ -56,23 +31,6 @@ def set_cookie(cookie):
 
 def get_team_data_from_id(team_id):
     cursor.execute('SELECT * FROM teams WHERE team_id=%s', (team_id,))
-
-def get_players_from_page(page_number,cards_per_page):
-    cursor.execute('SELECT player_id,first_name, last_name FROM players LIMIT %s OFFSET %s', (cards_per_page,page_number*cards_per_page))
-    return cursor.fetchall()
-
-def get_teams_from_page(page_number,cards_per_page):
-    cursor.execute('SELECT team_id,team_name FROM teams LIMIT %s OFFSET %s', (cards_per_page,page_number*cards_per_page))
-    return cursor.fetchall()
-
-def get_games_from_page(page_number,cards_per_page):
-    cursor.execute("""
-SELECT game_id,attack.abbreviation,defense.abbreviation,game_date FROM games 
-JOIN teams as attack ON home_team_id = attack.team_id
-JOIN teams as defense ON visitor_team_id = defense.team_id
-LIMIT %s OFFSET %s;
-""", (cards_per_page,page_number*cards_per_page))
-    return cursor.fetchall()
 
 def sanitize_current_page(page):
     if page:
@@ -94,67 +52,13 @@ def get_total_pages(table):
         cursor.execute('SELECT COUNT(*) FROM teams')
         return cursor.fetchone()[0]
 
-def build_filter_query_for_players(player : str,position,height,height_sign,weight,weight_sign,sort_type,page_number):
-    query="SELECT player_id,first_name, last_name FROM players"
-    original_query = query + " WHERE"
-    parameters = []
-    arbitre=True
-    if player:
-        if arbitre:
-            query = query + " WHERE"
-            arbitre = False
-        parameters.append("%" + player.capitalize() + "%")
-        parameters.append("%" + player.lower() + "%")
-        query = query + " (first_name LIKE %s OR last_name LIKE %s)"
-    if height:
-        if arbitre:
-            query = query + " WHERE"
-            arbitre = False
-        if height_sign in strings_to_sign:
-            if query == original_query:
-                query = query + " (feet * 0.3048) + (inches * 0.0254) " + strings_to_sign[height_sign] + " %s"
-            else:
-                query = query + " AND (height_feet * 0.3048) + (height_inches * 0.0254) " + strings_to_sign[height_sign] + " %s"
-            parameters.append(height)
-        else:
-            return "ERROR"
-    if weight:
-        if arbitre:
-            query = query + " WHERE"
-            arbitre = False
-        if weight_sign in strings_to_sign:
-            if query == original_query:
-                query = query + " weight_pounds " + strings_to_sign[weight_sign] + " %s"
-            else:
-                query = query + " AND weight_pounds " + strings_to_sign[weight_sign] + " %s"
-            parameters.append(round(float(weight) * 2.20462))
-        else:
-            return "ERROR"
-    if position:
-        if arbitre:
-            query = query + " WHERE"
-            arbitre = False
-        if query == original_query:
-            query = query + " position LIKE %s"
-        else:
-            query = query + " AND position LIKE %s"
-        parameters.append("%" + position + "%")
-    if sort_type:
-        if sort_type == "alphabetical":
-            query = query + " ORDER BY first_name,last_name"
-        elif sort_type == "height":
-            query = query + " ORDER BY height_feet,height_inches"
-        elif sort_type == "weight":
-            query = query + " ORDER BY weight_pounds"
-    #query = query + " LIMIT %s OFFSET %s"
-    #parameters.append(cards_per_page)
-    #parameters.append(int(page_number)*cards_per_page)
-    return [query,parameters]
 
 @app.route('/', methods=['POST','GET'])
 def players():
     session_id = flask.request.cookies.get('session_id')
-
+    if not get_user_from_cookie(session_id):
+        return redirect('/login')
+    
     if request.method == 'POST':
         player = request.form['playerName']
         position = request.form['playerPosition']
@@ -163,16 +67,20 @@ def players():
         weight = request.form['playerWeight']
         weight_sign = request.form['weight_sign']
         sort_type = request.form['sortingOption']
+        team_name = request.form['teamName']
+        sort_order = request.form['sortingOrder']
         page_number = sanitize_current_page(request.form['page'])
 
-        if not player and not position and not height and not weight :
+        if not player and not position and not height and not weight and not team_name and not sort_type:
             return redirect('/')
         
-        parameters_wraped = [player,height,height_sign,weight,weight_sign,position,sort_type]
-
-        query_parameters = build_filter_query_for_players(player,position,height,height_sign,weight,weight_sign,sort_type,page_number-1)
-        cursor.execute(query_parameters[0],query_parameters[1])
-        datas = cursor.fetchall()
+        parameters_wraped = [player,height,height_sign,weight,weight_sign,position,sort_type,team_name,sort_order]
+        query_parameters = build_filter_query_for_players(player,position,height,height_sign,weight,weight_sign,sort_type,team_name,sort_order)
+        if query_parameters[0] == "ERROR":
+            return redirect('/')
+        datas = database_execute_query(query_parameters[0],query_parameters[1])
+        # cursor.execute(query_parameters[0],query_parameters[1])
+        # datas = cursor.fetchall()
         total_pages=ceil(len(datas)/cards_per_page)
         datas = datas[(page_number-1)*cards_per_page:page_number*cards_per_page]
 
@@ -187,38 +95,114 @@ def players():
         datas = get_players_from_page(current_page-1,cards_per_page)
         return render_template('players.html', players = datas, current_page = current_page, total_pages = total_pages)
 
-@app.route('/teams', methods=['GET'])
+@app.route('/teams', methods=['GET','POST'])
 def teams():
     session_id = flask.request.cookies.get('session_id')
+    if not get_user_from_cookie(session_id):
+        return redirect('/login')
     
-    current_page = sanitize_current_page(request.args.get("page"))
-    total_pages = ceil(get_total_pages("teams")/cards_per_page)
-    if current_page > total_pages:
-        current_page = total_pages
-    
-    datas = get_teams_from_page(current_page-1,cards_per_page)
-    return render_template('teams.html', teams = datas, current_page = current_page, total_pages = total_pages)
+    if request.method == 'POST':
+        height = request.form['playerHeight']
+        height_sign = request.form['height_sign']
+        weight = request.form['playerWeight']
+        weight_sign = request.form['weight_sign']
+        sort_type = request.form['sortingOption']
+        sort_order = request.form['sortingOrder']
+        page_number = sanitize_current_page(request.form['page'])
+        if not height and not weight and not sort_type:
+            return redirect('/teams',code=302)
+        parameters_wraped = [height,height_sign,weight,weight_sign,sort_type,sort_order]
+        query_parameters = build_filter_query_for_teams(height,height_sign,weight,weight_sign,sort_type,sort_order)
+        if query_parameters[0] == "ERROR":
+            return redirect('/')
+        datas = database_execute_query(query_parameters[0],query_parameters[1])
+        #cursor.execute(query_parameters[0],query_parameters[1])
+        #datas = cursor.fetchall()
+        total_pages=ceil(len(datas)/cards_per_page)
+        datas = datas[(page_number-1)*cards_per_page:page_number*cards_per_page]
 
-@app.route('/games', methods=['GET'])
+        return render_template('teams.html', teams = datas, current_page = page_number, total_pages = total_pages, post = True,parameters = parameters_wraped)
+    elif request.method == 'GET':
+        current_page = sanitize_current_page(request.args.get("page"))
+        total_pages = ceil(get_total_pages("teams")/cards_per_page)
+        if current_page > total_pages:
+            current_page = total_pages
+        
+        datas = get_teams_from_page(current_page-1,cards_per_page)
+        return render_template('teams.html', teams = datas, current_page = current_page, total_pages = total_pages)
+
+@app.route('/games', methods=['GET','POST'])
 def games():
     session_id = flask.request.cookies.get('session_id')
-
-    current_page = sanitize_current_page(request.args.get("page"))
-    total_pages = ceil(get_total_pages("games")/cards_per_page)
-    if current_page > total_pages:
-        current_page = total_pages
+    if not get_user_from_cookie(session_id):
+        return redirect('/login')
     
-    datas = get_games_from_page(current_page-1,cards_per_page)
-    return render_template('games.html', games = datas,current_page = current_page, total_pages = total_pages)
+    if request.method == 'POST':
+        
+        home_team = request.form['homeTeam']
+        foreign_team = request.form['foreignTeam']
+        home_score = request.form['homeScore']
+        home_score_sign = request.form['homeScoreSign']
+        foreign_score = request.form['foreignScore']
+        foreign_score_sign = request.form['foreignScoreSign']
+        date = request.form['date']
+        date_sign = request.form['dateSign']
+        ecart_score = request.form['ecartScore']
+        ecart_sign = request.form['ecartSign']
+        # sort_type = request.form['sortingOption']
+        sort_order = request.form['sortingOrder']
+        winner_team = request.form['winnerTeam']
+        page_number = sanitize_current_page(request.form['page'])
+        if not home_team and not foreign_team and not home_score and not foreign_score and not date and not ecart_score and not winner_team:
+            return redirect('/games')
+        print(date)
+        parameters_wraped = [home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team]
+        query_parameters = build_filter_query_for_games(home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team)
 
-# Login page
+        if query_parameters[0] == "ERROR":
+            return redirect('/')
+        datas = database_execute_query(query_parameters[0],query_parameters[1])
+        #cursor.execute(query_parameters[0],query_parameters[1])
+        #datas = cursor.fetchall()
+        total_pages=ceil(len(datas)/cards_per_page)
+        datas = datas[(page_number-1)*cards_per_page:page_number*cards_per_page]
+
+        return render_template('games.html', games = datas, current_page = page_number, total_pages = total_pages, post = True,parameters = parameters_wraped)
+
+    elif request.method == 'GET':
+        current_page = sanitize_current_page(request.args.get("page"))
+        total_pages = ceil(get_total_pages("games")/cards_per_page)
+        if current_page > total_pages:
+            current_page = total_pages
+        
+        datas = get_games_from_page(current_page-1,cards_per_page)
+        return render_template('games.html', games = datas,current_page = current_page, total_pages = total_pages)
+
+@app.route('/player', methods = ['GET'])
+def player():
+    session_id = flask.request.cookies.get('session_id')
+    if not get_user_from_cookie(session_id):
+        return redirect('/login')
+    player_id = request.args.get("player_id")
+    data = []
+    if player_id_exist(player_id):
+        data = get_player_data_from_id(player_id)
+    else:
+        return redirect('/')
+    if team_id_exist(data[6]):
+        team_name = get_team_name_from_id(data[6])
+    else:
+        return redirect('/')
+    return render_template('player.html',player = data,team_name=team_name)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Check if the user is already logged in
+    session_id = flask.request.cookies.get('session_id')
+    if get_user_from_cookie(session_id):
+        return redirect('/')
     if flask.request.method == 'GET':
         session_id = flask.request.cookies.get('session_id')
         user = get_user_from_cookie(session_id)
-        print(session_id)
         if user != None:
             return 'You are already logged in. <a href="/">Go to the home page</a>'
         else:
@@ -234,13 +218,14 @@ def login():
         else:
             return 'Invalid username or password'
 
-# Register page
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    session_id = flask.request.cookies.get('session_id')
+    if get_user_from_cookie(session_id):
+        return redirect('/')
     if flask.request.method == 'GET':
         session_id = flask.request.cookies.get('session_id')
         user = get_user_from_cookie(session_id)
-        print(session_id)
         if user != None:
             return 'You are already logged in. <a href="/"> Go to the home page</a>'
         else:
