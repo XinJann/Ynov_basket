@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ team[1] }}</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/player.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/filter_bar.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+  <h1>Détails de l'équipe</h1>
+  
+  <div class="player-details">
+    <p>Abbreviation: {{ team[1] }} </p>
+    <p>City: {{ team[2] }} </p>
+    <p>Conference: {{ team[3] }}</p>
+    <p>Division: {{ team[4] }}</p>
+    <p>Nom complet: {{ team[5] }}</p>
+    <p>Team Name: {{ team[6] }}</p>
+  </div>
+  <h1> Joueurs inscrit </h1>
+  <div class="filter-bar">
+    <form action="/team" method="POST">
+        <label for="playerName">Nom du joueur:</label>
+        <input type="text" id="playerName" name="playerName" {% if post %}value="{{ parameters[0] }}"{% endif %}>
+
+        <input type="hidden" name="page" value="1">
+
+        <label for="playerPosition">Position:</label>
+        <input type="text" id="playerPosition" name="playerPosition" {% if post %}value="{{ parameters[5] }}"{% endif %}>
+
+        <div class="filter-item">
+            <label for="playerHeightSign">Taille </label>
+            <select id="playerHeightSign" name="height_sign">
+                <option value="gt" {% if post %} {% if parameters[2] == "gt" %} selected {% endif %}{% endif %}>></option>
+                <option value="gte" {% if post %} {% if parameters[2] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                <option value="eq" {% if post %} {% if parameters[2] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                <option value="lte" {% if post %} {% if parameters[2] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                <option value="lt" {% if post %} {% if parameters[2] == "lt" %} selected {% endif %}{% endif %}><</option>
+            </select>
+
+            
+            <input type="number" id="playerHeight" name="playerHeight" step= "0.01" placeholder="en mètre" {% if post %}value="{{ parameters[1] }}"{% endif %}>
+        </div>
+
+        <div class="filter-item">
+            <label for="playerWeightSign"> Poids </label>
+            <select id="playerWeightSign" name="weight_sign">
+                <option value="gt" {% if post %} {% if parameters[4] == "gt" %} selected {% endif %}{% endif %}>></option>
+                <option value="gte" {% if post %} {% if parameters[4] == "gte" %} selected {% endif %}{% endif %}>>=</option>
+                <option value="eq" {% if post %} {% if parameters[4] == "eq" %} selected {% endif %}{% endif %}>=</option>
+                <option value="lte" {% if post %} {% if parameters[4] == "lte" %} selected {% endif %}{% endif %}><=</option>
+                <option value="lt" {% if post %} {% if parameters[4] == "lt" %} selected {% endif %}{% endif %}><</option>
+            </select>
+
+            <input type="number" id="playerWeight" name="playerWeight" placeholder="en kg" {% if post %}value="{{ parameters[3] }}"{% endif %}>
+        </div>
+        
+        <input type="hidden" id="teamId" name="teamId" value="{{ team[0] }}">
+
+        <div class="sorting-options">
+            <label>
+                <input type="radio" name="sortingOption" value="alphabetical" {% if post %} {% if parameters[6] == "alphabetical" %} checked {% endif %}{% else %} checked {% endif %}>
+                Tri alphabétique
+            </label>
+            <label>
+                <input type="radio" name="sortingOption" value="height" {% if post %} {% if parameters[6] == "height" %} checked {% endif %}{% endif %}>
+                Tri par taille
+            </label>
+            <label>
+                <input type="radio" name="sortingOption" value="weight" {% if post %} {% if parameters[6] == "weight" %} checked {% endif %}{% endif %}>
+                Tri par poids
+            </label>
+        </div>
+
+        <div class="sorting-options">
+            <label>
+                <input type="radio" name="sortingOrder" value="ASC" {% if post %} {% if parameters[8] == "ASC" %} checked {% endif %} {% else %} checked {% endif %}>
+                Croissant
+            </label>
+            <label>
+                <input type="radio" name="sortingOrder" value="DESC" {% if post %} {% if parameters[8] == "DESC" %} checked {% endif %}{% endif %}>
+                Decroissant
+            </label>
+        </div>
+
+        <input type="submit" value="Filtrer">
+    </form>
+</div>
+  <div class="card-container" id="cardContainer">
+    {% for player in players %}
+    <a href="/player?player_id={{ player[0] }}" class="card-link">
+        <div class="card">
+            <h3>{{ player[1] }} {{ player[2] }}</h3>
+        </div>
+    </a>
+    {% endfor %}
+    </div>
+</body>
+</html>

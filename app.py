@@ -1,7 +1,6 @@
 from flask import Flask, make_response, render_template, redirect, request
 import flask
 import uuid
-import bcrypt
 from flask_bcrypt import generate_password_hash, check_password_hash
 from math import ceil
 from database_connector import cursor,connection,database_execute_query
@@ -10,16 +9,12 @@ from filter_querys.players import build_filter_query_for_players
 from filter_querys.teams import build_filter_query_for_teams
 from filter_querys.games import build_filter_query_for_games
 
-from utils.team_utils import get_teams_from_page,get_team_name_from_id,team_id_exist
+from utils.team_utils import get_teams_from_page,get_team_name_from_id,team_id_exist,get_team_data_from_id,get_team_members
 from utils.cookie_utils import get_cookie_from_user,get_user_from_cookie
 from utils.player_utils import get_players_from_page,player_id_exist,get_player_data_from_id
-from utils.game_utils import get_games_from_page
+from utils.game_utils import get_games_from_page,game_id_exist,get_game_data_from_id
 
 app = Flask(__name__)
-
-
-
-salt=bcrypt.gensalt()
 
 cards_per_page = 100
 
@@ -28,9 +23,6 @@ def set_cookie(cookie):
     response = make_response(redirect('/'))
     response.set_cookie('session_id', cookie)
     return response
-
-def get_team_data_from_id(team_id):
-    cursor.execute('SELECT * FROM teams WHERE team_id=%s', (team_id,))
 
 def sanitize_current_page(page):
     if page:
@@ -195,6 +187,65 @@ def player():
         return redirect('/')
     return render_template('player.html',player = data,team_name=team_name)
 
+@app.route('/team', methods = ['GET','POST'])
+def team():
+    session_id = flask.request.cookies.get('session_id')
+    if not get_user_from_cookie(session_id):
+        return redirect('/login')
+    
+    if request.method == 'GET':
+        team_id = request.args.get("team_id")
+        data = []
+        if team_id_exist(team_id):
+            data = get_team_data_from_id(team_id)
+            print(data)
+        else:
+            return redirect('/team')
+        team_players = get_team_members(team_id)
+        return render_template('team.html',team=data,players=team_players)
+    elif request.method == 'POST':
+        player = request.form['playerName']
+        position = request.form['playerPosition']
+        height = request.form['playerHeight']
+        height_sign = request.form['height_sign']
+        weight = request.form['playerWeight']
+        weight_sign = request.form['weight_sign']
+        sort_type = request.form['sortingOption']
+        team_name = get_team_name_from_id(request.form['teamId'])
+        sort_order = request.form['sortingOrder']
+        if not player and not position and not height and not weight and sort_type == "alphabetical":
+            return redirect('/team?team_id='+ request.form['teamId'])
+        data = []
+        if team_id_exist(request.form['teamId']):
+            data = get_team_data_from_id(request.form['teamId'])
+        else:
+            return redirect('/teams')
+        parameters_wraped = [player,height,height_sign,weight,weight_sign,position,sort_type,team_name,sort_order]
+        query_parameters = build_filter_query_for_players(player,position,height,height_sign,weight,weight_sign,sort_type,team_name,sort_order)
+        if query_parameters[0] == "ERROR":
+            return redirect('/team?team_id='+ request.form['teamName'])
+        team_players = database_execute_query(query_parameters[0],query_parameters[1])
+        print(parameters_wraped)
+        return render_template('team.html',team=data,players=team_players,parameters = parameters_wraped,post = True)
+
+@app.route('/game', methods = ['GET'])
+def game():
+    session_id = flask.request.cookies.get('session_id')
+    if not get_user_from_cookie(session_id):
+        return redirect('/login')
+    
+    game_id = request.args.get("game_id")
+    data = []
+    if game_id_exist(game_id):
+        data = get_game_data_from_id(game_id)
+    else:
+        return redirect('/games')
+    
+    home_team_data = get_team_data_from_id(data[1])
+    visitor_team_data = get_team_data_from_id(data[8])
+    return render_template('game.html',game=data,home_team = home_team_data,visitor_team = visitor_team_data)
+    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     session_id = flask.request.cookies.get('session_id')
@@ -241,7 +292,6 @@ def register():
         else:
             cookie = str(uuid.uuid4())
             hashed_password = generate_password_hash(password).decode('utf-8')
-            # password=bcrypt.hashpw(password.encode('utf-8'),salt)
             cursor.execute('INSERT INTO users (username, password, cookie) VALUES (%s, %s, %s)', (username, hashed_password, cookie))
             connection.commit()
 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/nav_bar.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/display_game.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/player.css') }}">
+    <title>Details game</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="player-details">
+        <h1>Game Details</h1>
+        <p>Date: {{ game[0][:10] }}</p>
+        <p>Home Team: {{ home_team[5] }} ( {{ home_team[1] }} )</p>
+        <p>Visitor Team: {{ visitor_team[5] }} ( {{ visitor_team[1] }} )</p>
+        <p>Period: {{ game[3] }}</p>
+        <p>Postseason: {% if game[4] %} OUI {% else %} NON {% endif %}</p>
+        <p>Season: {{ game[5] }}</p>
+        <p>Status: {{ game[6] }}</p>
+        <p>Time: {{ game[7] }}</p>
+    </div>
+    <div class="score-display">
+        <p>
+        <div class="card-container" id="cardContainer">
+            <a href="/team?team_id={{ home_team[0] }}" class="card-link">
+            <div class="card">
+                <h3>{{ home_team[1] }}</h3>
+            </div>
+            </a>
+        </div>
+        </p>
+
+        <p class="home-score">{{ game[2] }}</p>
+        <p class="vs">vs</p>
+        <p class="visitor-score">{{ game[9] }}</p>
+        <p>
+        <div class="card-container" id="cardContainer">
+            <a href="/team?team_id={{ visitor_team[0] }}" class="card-link">
+            <div class="card">
+                <h3>{{ visitor_team[1] }}</h3>
+            </div>
+            </a>
+        </div>
+        </p>
+    </div>
+</body>
+</html>

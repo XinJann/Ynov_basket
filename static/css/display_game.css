@@ -1,0 +1,41 @@
+.game-details {
+    margin: 20px auto;
+    padding: 20px;
+    width: 70%;
+    background-color: #f7f7f7;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.game-details h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.game-details p {
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.home-score, .visitor-score {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.vs {
+    margin: 0 20px;
+    font-size: 24px;
+    font-weight: bold;
+}

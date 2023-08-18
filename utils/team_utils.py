@@ -21,6 +21,12 @@ def team_id_exist(team_id):
     else:
         return False
 
-# à utiliser après "team_id_exist"
+# les fonctions qui suivent sont à utiliser après verif de "team_id_exist"
 def get_team_name_from_id(team_id):
     return database_execute_query('SELECT team_name FROM teams WHERE team_id = %s',(team_id,),"one")[0]
+
+def get_team_data_from_id(team_id):
+    return database_execute_query('SELECT team_id,abbreviation,city,conference,division,full_name,team_name FROM teams WHERE team_id = %s',(team_id,),"one")
+
+def get_team_members(team_id):
+    return database_execute_query('SELECT player_id,first_name,last_name FROM players WHERE team_id = %s ORDER BY first_name,last_name',(team_id,))
