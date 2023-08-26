@@ -54,14 +54,6 @@ def build_filter_query_for_players(player : str,position,height,height_sign,weig
         
         team_id = get_team_id_from_name(team_name)
         parameters.append(team_id)
-        # Faire une fonction qui récupe le team_id en fonction du nom
-        #team_id = database_execute_query('SELECT team_id FROM teams WHERE team_name  = %s',(team_name,),"one")
-        #if team_id:
-        #    parameters.append(team_id[0])
-        #else:
-        #    parameters.append(team_id)
-        # cursor.execute('SELECT team_id FROM teams WHERE team_name  = %s',(team_name,))
-        # team_id = cursor.fetchone()[0]
 
         if query == original_query:
             query = query + " team_id = %s"
@@ -73,7 +65,21 @@ def build_filter_query_for_players(player : str,position,height,height_sign,weig
         if sort_type == "alphabetical":
             query = query + " ORDER BY first_name "+ sort_order +",last_name " + sort_order
         elif sort_type == "height":
+            if arbitre:
+                query = query + " WHERE"
+                arbitre = False
+            if query == original_query:
+                query = query + " height_feet IS NOT NULL"
+            else:
+                query = query + " AND height_feet IS NOT NULL"
             query = query + " ORDER BY height_feet " + sort_order + ",height_inches " + sort_order
         elif sort_type == "weight":
+            if arbitre:
+                query = query + " WHERE"
+                arbitre = False
+            if query == original_query:
+                query = query + " weight_pounds IS NOT NULL"
+            else:
+                query = query + " AND weight_pounds IS NOT NULL"
             query = query + " ORDER BY weight_pounds " + sort_order
     return [query,parameters]

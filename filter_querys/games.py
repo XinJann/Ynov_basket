@@ -1,6 +1,6 @@
 from . import strings_to_sign
 
-def build_filter_query_for_games(home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team):
+def build_filter_query_for_games(home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team,game_state):
     query = 'SELECT game_id,attack.abbreviation,defense.abbreviation,game_date FROM games JOIN teams as attack ON visitor_team_id = attack.team_id JOIN teams as defense ON home_team_id = defense.team_id'
     original_query = query + " WHERE"
     parameters = []
@@ -66,7 +66,30 @@ def build_filter_query_for_games(home_team,foreign_team,home_score,home_score_si
             parameters.append(foreign_score)
         else:
             return "ERROR",[]
-        
+    if game_state:
+        if arbitre:
+            query = query + " WHERE"
+            arbitre = False
+        if query == original_query:
+            if game_state == "final":
+                query = query + " game_status = %s"
+                parameters.append(game_state)
+            elif game_state == "during":
+                query = query + " LENGTH(game_status) < 10 AND game_status != 'final'"
+            elif game_state == "coming":
+                query = query + " periode = 0"
+            else:
+                return "ERROR",[]
+        else:
+            if game_state == "final":
+                query = query + " AND game_status = %s"
+                parameters.append(game_state)
+            elif game_state == "during":
+                query = query + " AND periode != 0 AND game_status != 'final'"
+            elif game_state == "coming":
+                query = query + " AND periode = 0"
+            else:
+                return "ERROR",[]
     if date:
         if arbitre:
             query = query + " WHERE"

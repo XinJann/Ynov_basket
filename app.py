@@ -14,9 +14,15 @@ from utils.cookie_utils import get_cookie_from_user,get_user_from_cookie
 from utils.player_utils import get_players_from_page,player_id_exist,get_player_data_from_id
 from utils.game_utils import get_games_from_page,game_id_exist,get_game_data_from_id
 
+import setup_database as setup
+from apscheduler.schedulers.background import BackgroundScheduler  # Utilisé pour l'async (mise à jour de la DB)
+
 app = Flask(__name__)
 
 cards_per_page = 100
+
+sched = BackgroundScheduler()
+sched.add_job(setup.get_data_from_API,'interval', hours=5) # pour tester, on peut mettre "seconds=20" (ça marche)
 
 # Function to set a cookie for a user
 def set_cookie(cookie):
@@ -43,7 +49,6 @@ def get_total_pages(table):
     elif table == "teams":
         cursor.execute('SELECT COUNT(*) FROM teams')
         return cursor.fetchone()[0]
-
 
 @app.route('/', methods=['POST','GET'])
 def players():
@@ -106,7 +111,7 @@ def teams():
         parameters_wraped = [height,height_sign,weight,weight_sign,sort_type,sort_order]
         query_parameters = build_filter_query_for_teams(height,height_sign,weight,weight_sign,sort_type,sort_order)
         if query_parameters[0] == "ERROR":
-            return redirect('/')
+            return redirect('/teams')
         datas = database_execute_query(query_parameters[0],query_parameters[1])
         #cursor.execute(query_parameters[0],query_parameters[1])
         #datas = cursor.fetchall()
@@ -144,15 +149,16 @@ def games():
         # sort_type = request.form['sortingOption']
         sort_order = request.form['sortingOrder']
         winner_team = request.form['winnerTeam']
+        game_state = request.form['gameState']
+
         page_number = sanitize_current_page(request.form['page'])
-        if not home_team and not foreign_team and not home_score and not foreign_score and not date and not ecart_score and not winner_team:
+        if not home_team and not foreign_team and not home_score and not foreign_score and not date and not ecart_score and not winner_team and not game_state:
             return redirect('/games')
-        print(date)
-        parameters_wraped = [home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team]
-        query_parameters = build_filter_query_for_games(home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team)
+        parameters_wraped = [home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team,game_state]
+        query_parameters = build_filter_query_for_games(home_team,foreign_team,home_score,home_score_sign,foreign_score,foreign_score_sign,date,date_sign,ecart_score,ecart_sign,sort_order,winner_team,game_state)
 
         if query_parameters[0] == "ERROR":
-            return redirect('/')
+            return redirect('/games')
         datas = database_execute_query(query_parameters[0],query_parameters[1])
         #cursor.execute(query_parameters[0],query_parameters[1])
         #datas = cursor.fetchall()
@@ -304,4 +310,5 @@ def logout():
     return res
 
 if __name__ == '__main__':
+    sched.start()
     app.run()

@@ -78,12 +78,21 @@
             <div class="sorting-options">
                 <label>
                     <input type="radio" name="sortingOrder" value="ASC" {% if post %} {% if parameters[10] == "ASC" %} checked {% endif %} {% else %} checked {% endif %}>
-                    Croissant
+                    Plus ancien
                 </label>
                 <label>
                     <input type="radio" name="sortingOrder" value="DESC" {% if post %} {% if parameters[10] == "DESC" %} checked {% endif %}{% endif %}>
-                    Decroissant
+                    Plus récent
                 </label>
+            </div>
+
+            <div class="filter-item">
+                <label for="gameState">Etat de la partie :</label>
+                <select id="gameState" name="gameState">
+                    <option value="final" {% if post %} {% if parameters[12] == "final" %} selected {% endif %}{% endif %}>Terminé</option>
+                    <option value="during" {% if post %} {% if parameters[12] == "during" %} selected {% endif %}{% endif %}>En cours</option>
+                    <option value="coming" {% if post %} {% if parameters[12] == "coming" %} selected {% endif %}{% endif %}>A venir</option>
+                </select>
             </div>
 
             <input type="submit" value="Filtrer">
